@@ -5,11 +5,7 @@ type State = number;
 type Board = State[][];
 
 function createBoard(): Board {
-    const board: Board = [];
-    for (let r = 0; r < BOARD_ROWS; ++r) {
-        board.push(new Array<State>(BOARD_COLS).fill(0));
-    }
-    return board;
+    return Array<Array<State>>(BOARD_ROWS).fill([]).map(() => new Array<State>(BOARD_COLS).fill(0));
 }
 
 const stateColors = ["#202020", "#FF5050", "#50FF50", "#5050FF"];

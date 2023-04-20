@@ -2,11 +2,7 @@
 const BOARD_ROWS = 32;
 const BOARD_COLS = BOARD_ROWS;
 function createBoard() {
-    const board = [];
-    for (let r = 0; r < BOARD_ROWS; ++r) {
-        board.push(new Array(BOARD_COLS).fill(0));
-    }
-    return board;
+    return Array(BOARD_ROWS).fill([]).map(() => new Array(BOARD_COLS).fill(0));
 }
 const stateColors = ["#202020", "#FF5050", "#50FF50", "#5050FF"];
 const canvasId = "app";
