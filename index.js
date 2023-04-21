@@ -29,21 +29,17 @@ const CELL_WIDTH = app.width / BOARD_COLS;
 const CELL_HEIGHT = app.height / BOARD_ROWS;
 let currentBoard = createBoard();
 let nextBoard = createBoard();
-// ***
-// *.*
-// ***
+function mod(a, b) {
+    return (a % b + b) % b;
+}
 function countNbors(board, nbors, r0, c0) {
     nbors.fill(0);
     for (let dr = -1; dr <= 1; ++dr) {
         for (let dc = -1; dc <= 1; ++dc) {
             if (dr != 0 || dc != 0) {
-                const r = r0 + dr;
-                const c = c0 + dc;
-                if (0 <= r && r < BOARD_ROWS) {
-                    if (0 <= c && c < BOARD_COLS) {
-                        nbors[board[r][c]]++;
-                    }
-                }
+                const r = mod(r0 + dr, BOARD_ROWS);
+                const c = mod(c0 + dc, BOARD_COLS);
+                nbors[board[r][c]]++;
             }
         }
     }
