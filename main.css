@@ -30,3 +30,7 @@ h1 {
 fieldset {
     padding-bottom: 20px;
 }
+
+legend {
+    padding-bottom: 10px;
+}
