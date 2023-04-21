@@ -1,23 +1,28 @@
 <html>
   <head>
     <title>Cellular Automata</title>
+    <link rel="stylesheet" href="reset.css" />
     <link rel="stylesheet" href="main.css" />
   </head>
   <body>
     <h1>Cellular Automata</h1>
-    <p><button id="next">Next</button></p>
-    <fieldset id="urmom">
-      <legend>State:</legend>
+    <div class="canvas-with-controls">
+      <canvas id="app"></canvas>
+      <div class="controls">
+        <fieldset id="urmom">
+          <legend>State:</legend>
+          <div>
+            <input type="radio" id="dead" name="state" value="dead" />
+            <label for="dead">Dead</label>
+          </div>
+          <div>
+            <input type="radio" id="alive" name="state" value="alive" checked />
+            <label for="alive">Alive</label>
+          </div>
+        </fieldset>
+        <button id="next">Next</button>
       <div>
-        <input type="radio" id="dead" name="state" value="dead" />
-        <label for="dead">Dead</label>
-      </div>
-      <div>
-        <input type="radio" id="alive" name="state" value="alive" checked />
-        <label for="alive">Alive</label>
-      </div>
-    </fieldset>
-    <canvas id="app"></canvas>
+    <div>
     <script src="index.js"></script>
   </body>
 </html>

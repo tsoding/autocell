@@ -1,4 +1,32 @@
+@font-face {
+    font-family: 'LibreBaskerville';
+    src: url('fonts/LibreBaskerville-Regular.ttf') format('truetype');
+}
+
 body {
     background: #181818;
-    color: white;
+    color: #F0F0F0;
+    font-family: LibreBaskerville;
+    margin: auto;
+    max-width: 960px;
+    font-size: 16px;
+}
+
+h1 {
+    font-size: 40px;
+    text-align: center;
+    padding-top: 40px;
+    padding-bottom: 40px;
+}
+
+.canvas-with-controls {
+    display: flex;
+}
+
+.controls {
+    padding-left: 20px;
+}
+
+fieldset {
+    padding-bottom: 20px;
 }
