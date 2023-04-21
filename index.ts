@@ -92,24 +92,6 @@ function computeNextBoardGoL(states: number, current: Board, next: Board) {
         for (let c = 0; c < BOARD_COLS; ++c) {
             countNbors(current, nbors, r, c);
             next[r][c] = GoL[current[r][c]][nbors[DEAD]][nbors[ALIVE]];
-
-            //////////////////////////////
-            // switch (current[r][c]) {
-            //     case DEAD:
-            //         if (nbors[ALIVE] == 3) {
-            //             next[r][c] = ALIVE;
-            //         } else {
-            //             next[r][c] = DEAD;
-            //         }
-            //         break;
-            //     case ALIVE:
-            //         if (nbors[ALIVE] == 2 || nbors[ALIVE] == 3) {
-            //             next[r][c] = ALIVE;
-            //         } else {
-            //             next[r][c] = DEAD;
-            //         }
-            //         break;
-            // }
         }
     }
 }
