@@ -1,12 +1,12 @@
 {
-  "name": "cell-automaton",
+  "name": "autocell",
   "version": "1.0.0",
-  "description": "",
+  "description": "Cellular Automata Experiment",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "me",
+  "author": "Alexey Kutepov <reximkut@gmail.com>",
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.0.4"
