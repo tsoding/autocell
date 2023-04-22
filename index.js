@@ -133,8 +133,8 @@ window.onload = () => {
     const next = document.getElementById(nextId);
     const reset = document.getElementById(resetId);
     const fpsRangeLabel = document.getElementById(fpsRangeLabelId);
-    if (next == null) {
-        throw new Error(`Could not find button ${nextId}`);
+    if (play == null) {
+        throw new Error(`Could not find button ${playId}`);
     }
     let currentAutomaton = BB;
     let currentBoard = createBoard();
@@ -159,7 +159,7 @@ window.onload = () => {
         }
     };
     app.addEventListener("mousedown", function (e) {
-        console.log(e.button);
+        //  0 -  Left mouse click
         if (e.button === 0) {
             isMouseDown = true;
         }

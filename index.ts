@@ -1,6 +1,9 @@
 const BOARD_ROWS = 64;
 const BOARD_COLS = BOARD_ROWS;
 
+let TARGET_FPS = 30;
+let FRAME_DURATION:number;
+
 type Cell = number;
 type Board = Cell[][];
 
@@ -139,22 +142,38 @@ window.onload = () => {
     }
     app.width = 800;
     app.height = 800;
-    const ctx = app.getContext("2d");
+    const ctx = app.getContext("2d") as CanvasRenderingContext2D;
     if (ctx === null) {
         throw new Error(`Could not initialize 2d context`);
     }
 
+    const playId = "play";
+    const resetId = "reset";
     const nextId = "next";
+    const fpsRangeId = "fpsRange";
+    const fpsRangeLabelId = "fpsRangeLabel";
+
+    const play = document.getElementById(playId) as HTMLButtonElement;
+    const fpsRange = document.getElementById(fpsRangeId) as HTMLInputElement;
     const next = document.getElementById(nextId) as HTMLButtonElement;
-    if (next == null) {
-        throw new Error(`Could not find button ${nextId}`);
+    const reset = document.getElementById(resetId) as HTMLButtonElement;
+    const fpsRangeLabel = document.getElementById(fpsRangeLabelId) as HTMLInputElement;
+
+    if (play == null) {
+        throw new Error(`Could not find button ${playId}`);
     }
 
     let currentAutomaton = BB;
     let currentBoard: Board = createBoard();
     let nextBoard: Board = createBoard();
-    
-    app.addEventListener("click", (e) => {
+    let isMouseDown = false;
+    let isPaused = true;
+    let lastUpdatedTimestamp = Date.now();
+
+    setFps(TARGET_FPS);
+
+    const handleDraw =(e:MouseEvent) => {
+        pause();
         const CELL_WIDTH = app.width/BOARD_COLS;
         const CELL_HEIGHT = app.height/BOARD_ROWS;
         
@@ -166,18 +185,73 @@ window.onload = () => {
             if ((state[i] as HTMLInputElement).checked) {
                 currentBoard[row][col] = i;
                 render(ctx, currentAutomaton, currentBoard);
+
                 return;
             }
         }
+    };
+
+    app.addEventListener("mousedown", function(e){
+        //  0 -  Left mouse click
+        if(e.button === 0){
+            isMouseDown = true;
+        }
+    });
+    app.addEventListener("mouseup", function(){
+        isMouseDown = false;
+    });
+    app.addEventListener("mousemove", (e) => {
+        if(isMouseDown){
+            handleDraw(e)
+        }
+    });
+    play.addEventListener("click", () => {
+        isPaused = false;
+        run()
+    });
+    reset.addEventListener("click", () => {
+        currentBoard = createBoard();
+        render(ctx, currentAutomaton, currentBoard);
+    });
+    fpsRange.addEventListener("input", (e) => {
+        setFps(Number((e.target as HTMLInputElement).value))
+    })
+    next.addEventListener("click", () => {
+        if(!isPaused){
+            isPaused = true;
+        }
+        computeAndDrawBoard()
     });
 
-    next.addEventListener("click", () => {
+    function setFps(value:number){
+        TARGET_FPS = value;
+        fpsRange.value = String(value);
+        fpsRangeLabel.innerText = String(`${value} FPS`);
+        FRAME_DURATION = 1000 / TARGET_FPS;
+    }
+    function pause(){
+        isPaused = true;
+    }
+    function computeAndDrawBoard() {
+        computeNextBoard(currentAutomaton, currentBoard, nextBoard);
+        [currentBoard, nextBoard] = [nextBoard, currentBoard];
         computeNextBoard(currentAutomaton, currentBoard, nextBoard);
         [currentBoard, nextBoard] = [nextBoard, currentBoard];
         render(ctx, currentAutomaton, currentBoard);
-    });
+    }
 
-    render(ctx, currentAutomaton, currentBoard);
+    function run(){
+        let currentTime = Date.now()
+        let elapsedTime = currentTime - lastUpdatedTimestamp;
+        if( !isPaused  && elapsedTime >= FRAME_DURATION ){
+            computeAndDrawBoard()
+            lastUpdatedTimestamp = currentTime;
+        }
+        requestAnimationFrame(run);
+    }
+
+    computeAndDrawBoard();
+
 };
 
 // TODO: autoplay
