@@ -1,5 +1,5 @@
 "use strict";
-const BOARD_ROWS = 32;
+const BOARD_ROWS = 64;
 const BOARD_COLS = BOARD_ROWS;
 function createBoard() {
     const board = [];
@@ -8,27 +8,6 @@ function createBoard() {
     }
     return board;
 }
-const stateColors = ["#202020", "#FF5050", "#50FF50", "#5050FF"];
-const canvasId = "app";
-const app = document.getElementById(canvasId);
-if (app === null) {
-    throw new Error(`Could not find canvas ${canvasId}`);
-}
-app.width = 800;
-app.height = 800;
-const ctx = app.getContext("2d");
-if (ctx === null) {
-    throw new Error(`Could not initialize 2d context`);
-}
-const nextId = "next";
-const next = document.getElementById(nextId);
-if (next == null) {
-    throw new Error(`Could not find button ${nextId}`);
-}
-const CELL_WIDTH = app.width / BOARD_COLS;
-const CELL_HEIGHT = app.height / BOARD_ROWS;
-let currentBoard = createBoard();
-let nextBoard = createBoard();
 function mod(a, b) {
     return (a % b + b) % b;
 }
@@ -44,69 +23,133 @@ function countNbors(board, nbors, r0, c0) {
         }
     }
 }
-const GoL = [
-    [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],
-    [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0, 0, 0],
-        [0, 0, 1, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],
+const Seeds = [
+    {
+        "transitions": {
+            "62": 1,
+        },
+        "default": 0,
+        "color": "#202020",
+    },
+    {
+        "transitions": {},
+        "default": 0,
+        "color": "#FF5050",
+    },
 ];
-function computeNextBoardGoL(states, current, next) {
+const GoL = [
+    {
+        "transitions": {
+            "53": 1,
+        },
+        "default": 0,
+        "color": "#202020",
+    },
+    {
+        "transitions": {
+            "62": 1,
+            "53": 1,
+        },
+        "default": 0,
+        "color": "#FF5050",
+    },
+];
+const BB = [
+    // 0 - Dead
+    {
+        "transitions": {
+            "026": 1,
+            "125": 1,
+            "224": 1,
+            "323": 1,
+            "422": 1,
+            "521": 1,
+            "620": 1,
+        },
+        "default": 0,
+        "color": "#202020",
+    },
+    // 1 - Live
+    {
+        "transitions": {},
+        "default": 2,
+        "color": "#FF5050",
+    },
+    // 2 - Dying
+    {
+        "transitions": {},
+        "default": 0,
+        "color": "#50FF50",
+    }
+];
+function computeNextBoard(automaton, current, next) {
     const DEAD = 0;
     const ALIVE = 1;
-    const nbors = new Array(states).fill(0);
+    const nbors = new Array(automaton.length).fill(0);
     for (let r = 0; r < BOARD_ROWS; ++r) {
         for (let c = 0; c < BOARD_COLS; ++c) {
             countNbors(current, nbors, r, c);
-            next[r][c] = GoL[current[r][c]][nbors[DEAD]][nbors[ALIVE]];
+            const state = automaton[current[r][c]];
+            next[r][c] = state.transitions[nbors.join("")];
+            if (next[r][c] === undefined)
+                next[r][c] = state["default"];
         }
     }
 }
-function render(ctx, board) {
-    ctx.fillStyle = "#202020";
-    ctx.fillRect(0, 0, app.width, app.height);
-    ctx.fillStyle = "#FF5050";
+function render(ctx, automaton, board) {
+    const CELL_WIDTH = ctx.canvas.width / BOARD_COLS;
+    const CELL_HEIGHT = ctx.canvas.height / BOARD_ROWS;
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     for (let r = 0; r < BOARD_ROWS; ++r) {
         for (let c = 0; c < BOARD_COLS; ++c) {
             const x = c * CELL_WIDTH;
             const y = r * CELL_HEIGHT;
-            ctx.fillStyle = stateColors[board[r][c]];
+            ctx.fillStyle = automaton[board[r][c]].color;
             ctx.fillRect(x, y, CELL_WIDTH, CELL_HEIGHT);
         }
     }
 }
-app.addEventListener("click", (e) => {
-    const col = Math.floor(e.offsetX / CELL_WIDTH);
-    const row = Math.floor(e.offsetY / CELL_HEIGHT);
-    const state = document.getElementsByName("state");
-    for (let i = 0; i < state.length; ++i) {
-        if (state[i].checked) {
-            currentBoard[row][col] = i;
-            render(ctx, currentBoard);
-            return;
-        }
+window.onload = () => {
+    const canvasId = "app";
+    const app = document.getElementById(canvasId);
+    if (app === null) {
+        throw new Error(`Could not find canvas ${canvasId}`);
     }
-});
-next.addEventListener("click", () => {
-    computeNextBoardGoL(2, currentBoard, nextBoard);
-    [currentBoard, nextBoard] = [nextBoard, currentBoard];
-    render(ctx, currentBoard);
-});
-render(ctx, currentBoard);
+    app.width = 800;
+    app.height = 800;
+    const ctx = app.getContext("2d");
+    if (ctx === null) {
+        throw new Error(`Could not initialize 2d context`);
+    }
+    const nextId = "next";
+    const next = document.getElementById(nextId);
+    if (next == null) {
+        throw new Error(`Could not find button ${nextId}`);
+    }
+    let currentAutomaton = BB;
+    let currentBoard = createBoard();
+    let nextBoard = createBoard();
+    app.addEventListener("click", (e) => {
+        const CELL_WIDTH = app.width / BOARD_COLS;
+        const CELL_HEIGHT = app.height / BOARD_ROWS;
+        const col = Math.floor(e.offsetX / CELL_WIDTH);
+        const row = Math.floor(e.offsetY / CELL_HEIGHT);
+        const state = document.getElementsByName("state");
+        for (let i = 0; i < state.length; ++i) {
+            if (state[i].checked) {
+                currentBoard[row][col] = i;
+                render(ctx, currentAutomaton, currentBoard);
+                return;
+            }
+        }
+    });
+    next.addEventListener("click", () => {
+        computeNextBoard(currentAutomaton, currentBoard, nextBoard);
+        [currentBoard, nextBoard] = [nextBoard, currentBoard];
+        render(ctx, currentAutomaton, currentBoard);
+    });
+    render(ctx, currentAutomaton, currentBoard);
+};
+// TODO: autoplay
+// TODO: drawing the cells
+// TODO: autopopulate radio buttons based on the current automaton
