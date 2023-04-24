@@ -264,6 +264,6 @@ window.onload = async () => {
     render(ctx, currentAutomaton, currentBoard);
 };
 
-// TODO: autoplay
+// TODO: pause
 // TODO: drawing the cells
 // TODO: autopopulate radio buttons based on the current automaton

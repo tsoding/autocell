@@ -225,7 +225,7 @@ window.onload = () => __awaiter(void 0, void 0, void 0, function* () {
     });
     render(ctx, currentAutomaton, currentBoard);
 });
-// TODO: autoplay
+// TODO: pause
 // TODO: drawing the cells
 // TODO: autopopulate radio buttons based on the current automaton
 //# sourceMappingURL=index.js.map
