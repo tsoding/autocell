@@ -130,18 +130,18 @@ function bytesAsHexString(bytes) {
     }
     return result;
 }
-function transcendentalApprehensionOfImage(image) {
-    const board = new Board(image.width, image.height);
+function transcendentalApprehensionOfImage(image, rx, ry, rw, rh) {
+    const board = new Board(rw, rh);
     let count = 0;
     const colorToState = {};
-    for (let y = 0; y < image.height; ++y) {
-        for (let x = 0; x < image.width; ++x) {
+    for (let y = ry; y < ry + rh; ++y) {
+        for (let x = rx; x < rx + rw; ++x) {
             const pixel = new Uint8Array(image.data.buffer, (y * image.width + x) * 4, 4);
             const color = bytesAsHexString(pixel);
             if (colorToState[color] === undefined) {
                 colorToState[color] = count++;
             }
-            board.set(x, y, colorToState[color]);
+            board.set(x - rx, y - ry, colorToState[color]);
         }
     }
     const automaton = Object.keys(colorToState).map((color) => {
@@ -155,7 +155,7 @@ function transcendentalApprehensionOfImage(image) {
 }
 window.onload = () => __awaiter(void 0, void 0, void 0, function* () {
     const cute = yield stbi_load_from_url("img/Cute People Icon v2.png");
-    const [cuteBoard, cuteAutomaton] = transcendentalApprehensionOfImage(cute);
+    const [cuteBoard, cuteAutomaton] = transcendentalApprehensionOfImage(cute, 0, 0, cute.width / 4, cute.height / 3);
     console.log(cuteBoard);
     console.log(cuteAutomaton);
     const nbors = new Array(cuteAutomaton.length).fill(0);
@@ -190,9 +190,8 @@ window.onload = () => __awaiter(void 0, void 0, void 0, function* () {
     if (play == null) {
         throw new Error(`Could not find button ${playId}`);
     }
-    const BOARD_SIZE = 32;
     let currentAutomaton = cuteAutomaton;
-    let currentBoard = cuteBoard; //new Board(BOARD_SIZE, BOARD_SIZE/2);
+    let currentBoard = cuteBoard;
     let nextBoard = new Board(currentBoard.width, currentBoard.height);
     app.height = app.width * (currentBoard.height / currentBoard.width);
     app.addEventListener("click", (e) => {
@@ -215,13 +214,18 @@ window.onload = () => __awaiter(void 0, void 0, void 0, function* () {
         render(ctx, currentAutomaton, currentBoard);
     };
     next.addEventListener("click", nextState);
-    const playIteration = () => {
-        nextState();
-        setTimeout(playIteration, PLAY_PERIOD);
-    };
-    const PLAY_PERIOD = 250;
+    const PLAY_PERIOD = 100;
+    let playInterval = setInterval(nextState, PLAY_PERIOD);
     play.addEventListener("click", () => {
-        playIteration();
+        if (playInterval === null) {
+            playInterval = setInterval(nextState, PLAY_PERIOD);
+            play.innerText = "Pause";
+        }
+        else {
+            clearInterval(playInterval);
+            playInterval = null;
+            play.innerText = "Play";
+        }
     });
     render(ctx, currentAutomaton, currentBoard);
 });
