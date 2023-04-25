@@ -185,26 +185,78 @@ function getElementByIdOrError<T>(id: string): T {
     return element;
 }
 
-window.onload = async () => {
-    const cute = await stbi_load_from_url("img/Cute People Icon v2.png");
-    const [cuteBoard, cuteAutomaton] = transcendentalApprehensionOfImage(cute, 0, 0, cute.width, cute.height);
-
-    console.log(cuteBoard);
-    console.log(cuteAutomaton);
-
-    for (let y = 0; y < cuteBoard.height; ++y) {
-        for (let x = 0; x < cuteBoard.width; ++x) {
-            const nbors = countNbors(cuteBoard, cuteAutomaton.length, x, y);
-            const state = cuteBoard.get(x, y);
-            for (let i = 0; i < cuteAutomaton.length; ++i) {
-                if (cuteAutomaton[i].transitions[nbors] === undefined) {
-                    cuteAutomaton[i].transitions[nbors] = state;
+function meltdown(board: Board, automaton: Automaton) {
+    for (let y = 0; y < board.height; ++y) {
+        for (let x = 0; x < board.width; ++x) {
+            const nbors = countNbors(board, automaton.length, x, y);
+            const state = board.get(x, y);
+            for (let i = 0; i < automaton.length; ++i) {
+                if (automaton[i].transitions[nbors] === undefined) {
+                    automaton[i].transitions[nbors] = state;
                 }
             }
         }
     }
+}
 
-    console.log(cuteAutomaton);
+function cycleRules(board: Board, automaton: Automaton) {
+    const nborStates: { [key: string]: Set<number> } = {};
+    for (let y = 0; y < board.height; ++y) {
+        for (let x = 0; x < board.width; ++x) {
+            const nbors = countNbors(board, automaton.length, x, y);
+            if (nborStates[nbors] === undefined) {
+                nborStates[nbors] = new Set<number>();
+            }
+            nborStates[nbors].add(board.get(x, y));
+        }
+    }
+
+    for (let nbor of Object.keys(nborStates)) {
+        const states = Array.from(nborStates[nbor]);
+        for (let i = 0; i < states.length; ++i) {
+            const state1 = states[i];
+            const state2 = states[(i+1)%states.length];
+            automaton[state1].transitions[nbor] = state2;
+        }
+    }
+}
+
+function allNborsFreqs(state: number, xs: number[] = [], result: [string, number][] = []): [string, number][] {
+    const s = xs.reduce((a, b) => a + b, 0);
+    if (state <= 0) {
+        if (s === 8) {
+            result.push([xs.join(""), xs.indexOf(Math.max(...xs))]);
+        }
+        return result;
+    }
+    for (let x = 0; x <= 8 - s; ++x) {
+        xs.push(x);
+        allNborsFreqs(state - 1, xs, result);
+        xs.pop();
+    }
+    return result;
+}
+
+function freqRules(automaton: Automaton) {
+    const nborsFreqs = allNborsFreqs(automaton.length);
+
+    for (let i = 0; i < automaton.length; ++i) {
+        for (let [nbor, freq] of nborsFreqs) {
+            automaton[i].transitions[nbor] = freq;
+        }
+    }
+}
+
+window.onload = async () => {
+    const imgPath = "img/Cute People Icon v2.png";
+    // const imgPath = "img/Kappa.png";
+    // const imgPath = "img/tsodinPog.png";
+    const cute = await stbi_load_from_url(imgPath);
+    const [cuteBoard, cuteAutomaton] = transcendentalApprehensionOfImage(cute, 0, 0, cute.width, cute.height);
+
+    meltdown(cuteBoard, cuteAutomaton);
+    // cycleRules(cuteBoard, cuteAutomaton);
+    // freqRules(cuteAutomaton);
 
     const palette = getElementByIdOrError<HTMLCanvasElement>("palette");
     palette.width = 150;
@@ -217,6 +269,8 @@ window.onload = async () => {
     let hoveredState: number | null = null;
     const PALETTE_COLS = 6;
     const PALETTE_SIZE = palette.width/PALETTE_COLS;
+
+    palette.height = Math.ceil(cuteAutomaton.length/PALETTE_COLS)*PALETTE_SIZE;
 
     const redrawPalette = () => {
         paletteCtx.clearRect(0, 0, palette.width, palette.height);
@@ -328,4 +382,3 @@ window.onload = async () => {
 
     render(ctx, currentAutomaton, currentBoard);
 };
-
