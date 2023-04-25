@@ -194,17 +194,19 @@ window.onload = () => __awaiter(void 0, void 0, void 0, function* () {
     let currentBoard = cuteBoard;
     let nextBoard = new Board(currentBoard.width, currentBoard.height);
     app.height = app.width * (currentBoard.height / currentBoard.width);
-    app.addEventListener("click", (e) => {
-        const CELL_WIDTH = app.width / currentBoard.width;
-        const CELL_HEIGHT = app.height / currentBoard.height;
-        const x = Math.floor(e.offsetX / CELL_WIDTH);
-        const y = Math.floor(e.offsetY / CELL_HEIGHT);
-        const state = document.getElementsByName("state");
-        for (let i = 0; i < state.length; ++i) {
-            if (state[i].checked) {
-                currentBoard.set(x, y, i);
-                render(ctx, currentAutomaton, currentBoard);
-                return;
+    app.addEventListener("mousemove", (e) => {
+        if (e.buttons & 1) {
+            const CELL_WIDTH = app.width / currentBoard.width;
+            const CELL_HEIGHT = app.height / currentBoard.height;
+            const x = Math.floor(e.offsetX / CELL_WIDTH);
+            const y = Math.floor(e.offsetY / CELL_HEIGHT);
+            const state = document.getElementsByName("state");
+            for (let i = 0; i < state.length; ++i) {
+                if (state[i].checked) {
+                    currentBoard.set(x, y, i);
+                    render(ctx, currentAutomaton, currentBoard);
+                    return;
+                }
             }
         }
     });
@@ -229,6 +231,5 @@ window.onload = () => __awaiter(void 0, void 0, void 0, function* () {
     });
     render(ctx, currentAutomaton, currentBoard);
 });
-// TODO: drawing the cells
 // TODO: autopopulate radio buttons based on the current automaton
 //# sourceMappingURL=index.js.map
