@@ -177,9 +177,17 @@ function transcendentalApprehensionOfImage(image: ImageData, rx: number, ry: num
     return [board, automaton];
 }
 
+function getElementByIdOrError<T>(id: string): T {
+    const element = document.getElementById(id) as T;
+    if (element === null) {
+        throw new Error(`Could not find element ${id}`);
+    }
+    return element;
+}
+
 window.onload = async () => {
     const cute = await stbi_load_from_url("img/Cute People Icon v2.png");
-    const [cuteBoard, cuteAutomaton] = transcendentalApprehensionOfImage(cute, 0, 0, cute.width/4, cute.height/3);
+    const [cuteBoard, cuteAutomaton] = transcendentalApprehensionOfImage(cute, 0, 0, cute.width, cute.height);
 
     console.log(cuteBoard);
     console.log(cuteAutomaton);
@@ -188,36 +196,83 @@ window.onload = async () => {
         for (let x = 0; x < cuteBoard.width; ++x) {
             const nbors = countNbors(cuteBoard, cuteAutomaton.length, x, y);
             const state = cuteBoard.get(x, y);
-            if (cuteAutomaton[state].transitions[nbors] === undefined) {
-                cuteAutomaton[state].transitions[nbors] = state;
+            for (let i = 0; i < cuteAutomaton.length; ++i) {
+                if (cuteAutomaton[i].transitions[nbors] === undefined) {
+                    cuteAutomaton[i].transitions[nbors] = state;
+                }
             }
         }
     }
 
     console.log(cuteAutomaton);
 
-    const canvasId = "app";
-    const app = document.getElementById(canvasId) as HTMLCanvasElement;
-    if (app === null) {
-        throw new Error(`Could not find canvas ${canvasId}`);
+    const palette = getElementByIdOrError<HTMLCanvasElement>("palette");
+    palette.width = 150;
+    const paletteCtx = palette.getContext("2d");
+    if (paletteCtx === null) {
+        throw new Error(`Could not initialize 2d context`);
     }
+
+    let currentState = 1;
+    let hoveredState: number | null = null;
+    const PALETTE_COLS = 6;
+    const PALETTE_SIZE = palette.width/PALETTE_COLS;
+
+    const redrawPalette = () => {
+        paletteCtx.clearRect(0, 0, palette.width, palette.height);
+        for (let i = 0; i < cuteAutomaton.length; ++i) {
+            const y = Math.floor(i/PALETTE_COLS);
+            const x = i%PALETTE_COLS;
+            paletteCtx.fillStyle = cuteAutomaton[i].color;
+            paletteCtx.fillRect(x*PALETTE_SIZE, y*PALETTE_SIZE, PALETTE_SIZE, PALETTE_SIZE);
+            const thicc = 3;
+            if (i == currentState) {
+                paletteCtx.strokeStyle = "white";
+                paletteCtx.lineWidth = thicc;
+                paletteCtx.strokeRect(x*PALETTE_SIZE + thicc/2, y*PALETTE_SIZE + thicc/2, PALETTE_SIZE - thicc, PALETTE_SIZE - thicc);
+            } else if (i == hoveredState) {
+                paletteCtx.strokeStyle = "gray";
+                paletteCtx.lineWidth = thicc;
+                paletteCtx.strokeRect(x*PALETTE_SIZE + thicc/2, y*PALETTE_SIZE + thicc/2, PALETTE_SIZE - thicc, PALETTE_SIZE - thicc);
+            }
+        }
+    };
+
+    palette.addEventListener("mousemove", (e) => {
+        const x = Math.floor(e.offsetX/PALETTE_SIZE);
+        const y = Math.floor(e.offsetY/PALETTE_SIZE);
+        const state = y*PALETTE_COLS + x;
+
+        if (state < cuteAutomaton.length) {
+            hoveredState = state;
+        } else {
+            hoveredState = null;
+        }
+        redrawPalette();
+    });
+
+    palette.addEventListener("click", (e) => {
+        const x = Math.floor(e.offsetX/PALETTE_SIZE);
+        const y = Math.floor(e.offsetY/PALETTE_SIZE);
+        const state = y*PALETTE_COLS + x;
+        
+        if (state < cuteAutomaton.length) {
+            currentState = state;
+            redrawPalette();
+        }
+    });
+
+    redrawPalette();
+
+    const app = getElementByIdOrError<HTMLCanvasElement>("app");
     app.width = 800;
     const ctx = app.getContext("2d");
     if (ctx === null) {
         throw new Error(`Could not initialize 2d context`);
     }
 
-    const nextId = "next";
-    const next = document.getElementById(nextId) as HTMLButtonElement;
-    if (next == null) {
-        throw new Error(`Could not find button ${nextId}`);
-    }
-
-    const playId = "play";
-    const play = document.getElementById(playId) as HTMLButtonElement;
-    if (play == null) {
-        throw new Error(`Could not find button ${playId}`);
-    }
+    const next = getElementByIdOrError<HTMLButtonElement>("next");
+    const play = getElementByIdOrError<HTMLButtonElement>("play");
 
     let currentAutomaton = cuteAutomaton;
     let currentBoard: Board = cuteBoard;
@@ -233,14 +288,8 @@ window.onload = async () => {
             const x = Math.floor(e.offsetX/CELL_WIDTH);
             const y = Math.floor(e.offsetY/CELL_HEIGHT);
 
-            const state = document.getElementsByName("state");
-            for (let i = 0; i < state.length; ++i) {
-                if ((state[i] as HTMLInputElement).checked) {
-                    currentBoard.set(x, y, i);
-                    render(ctx, currentAutomaton, currentBoard);
-                    return;
-                }
-            }
+            currentBoard.set(x, y, currentState);
+            render(ctx, currentAutomaton, currentBoard);
         }
     });
 
@@ -251,14 +300,8 @@ window.onload = async () => {
         const x = Math.floor(e.offsetX/CELL_WIDTH);
         const y = Math.floor(e.offsetY/CELL_HEIGHT);
 
-        const state = document.getElementsByName("state");
-        for (let i = 0; i < state.length; ++i) {
-            if ((state[i] as HTMLInputElement).checked) {
-                currentBoard.set(x, y, i);
-                render(ctx, currentAutomaton, currentBoard);
-                return;
-            }
-        }
+        currentBoard.set(x, y, currentState);
+        render(ctx, currentAutomaton, currentBoard);
     });
 
     const nextState = () => {
@@ -270,7 +313,7 @@ window.onload = async () => {
     next.addEventListener("click", nextState);
 
     const PLAY_PERIOD = 100;
-    let playInterval: number | null = setInterval(nextState, PLAY_PERIOD);
+    let playInterval: number | null = null;//setInterval(nextState, PLAY_PERIOD);
 
     play.addEventListener("click", () => {
         if (playInterval === null) {
@@ -286,4 +329,3 @@ window.onload = async () => {
     render(ctx, currentAutomaton, currentBoard);
 };
 
-// TODO: autopopulate radio buttons based on the current automaton
