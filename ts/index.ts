@@ -24,8 +24,10 @@ function mod(a: number, b: number): number {
     return (a%b + b)%b
 }
 
-function countNbors(board: Board, nbors: number[], x0: number, y0: number) {
-    nbors.fill(0);
+type Nbors = string;
+
+function countNbors(board: Board, states: number, x0: number, y0: number): Nbors {
+    const nbors = Array(states).fill(0);
     for (let dy = -1; dy <= 1; ++dy) {
         for (let dx = -1; dx <= 1; ++dx) {
             if (dy != 0 || dx != 0) {
@@ -35,6 +37,7 @@ function countNbors(board: Board, nbors: number[], x0: number, y0: number) {
             }
         }
     }
+    return nbors.join("");
 }
 
 interface State {
@@ -112,14 +115,13 @@ const BB: Automaton = [
 function computeNextBoard(automaton: Automaton, current: Board, next: Board) {
     console.assert(current.width == next.width);
     console.assert(current.height == next.height);
-    const nbors = new Array(automaton.length).fill(0);
     for (let y = 0; y < current.height; ++y) {
         for (let x = 0; x < current.width; ++x) {
-            countNbors(current, nbors, x, y);
+            const nbors = countNbors(current, automaton.length, x, y);
             const state = automaton[current.get(x, y)];
-            next.set(x, y, state.transitions[nbors.join("")]);
+            next.set(x, y, state.transitions[nbors]);
             if (next.get(x, y) === undefined) {
-                next.set(x, y, state["default"]);
+                next.set(x, y, state.default);
             }
         }
     }
@@ -182,14 +184,12 @@ window.onload = async () => {
     console.log(cuteBoard);
     console.log(cuteAutomaton);
 
-    const nbors = new Array(cuteAutomaton.length).fill(0);
     for (let y = 0; y < cuteBoard.height; ++y) {
         for (let x = 0; x < cuteBoard.width; ++x) {
-            countNbors(cuteBoard, nbors, x, y);
+            const nbors = countNbors(cuteBoard, cuteAutomaton.length, x, y);
             const state = cuteBoard.get(x, y);
-            const nborsKey = nbors.join("");
-            if (cuteAutomaton[state].transitions[nborsKey] === undefined) {
-                cuteAutomaton[state].transitions[nborsKey] = state;
+            if (cuteAutomaton[state].transitions[nbors] === undefined) {
+                cuteAutomaton[state].transitions[nbors] = state;
             }
         }
     }
@@ -240,6 +240,23 @@ window.onload = async () => {
                     render(ctx, currentAutomaton, currentBoard);
                     return;
                 }
+            }
+        }
+    });
+
+    app.addEventListener("mousedown", (e) => {
+        const CELL_WIDTH = app.width/currentBoard.width;
+        const CELL_HEIGHT = app.height/currentBoard.height;
+
+        const x = Math.floor(e.offsetX/CELL_WIDTH);
+        const y = Math.floor(e.offsetY/CELL_HEIGHT);
+
+        const state = document.getElementsByName("state");
+        for (let i = 0; i < state.length; ++i) {
+            if ((state[i] as HTMLInputElement).checked) {
+                currentBoard.set(x, y, i);
+                render(ctx, currentAutomaton, currentBoard);
+                return;
             }
         }
     });
