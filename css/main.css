@@ -1,6 +1,6 @@
 @font-face {
     font-family: 'LibreBaskerville';
-    src: url('fonts/LibreBaskerville-Regular.ttf') format('truetype');
+    src: url('../fonts/LibreBaskerville-Regular.ttf') format('truetype');
 }
 
 body {
