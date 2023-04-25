@@ -372,13 +372,13 @@ window.onload = async () => {
     play.addEventListener("click", () => {
         if (playInterval === null) {
             playInterval = setInterval(nextState, PLAY_PERIOD);
-            play.innerText = "Pause";
         } else {
             clearInterval(playInterval);
             playInterval = null;
-            play.innerText = "Play";
         }
+        play.innerText = playInterval === null ? "Play" : "Pause";
     });
+    play.innerText = playInterval === null ? "Play" : "Pause";
 
     render(ctx, currentAutomaton, currentBoard);
 };
